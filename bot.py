@@ -32,6 +32,7 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'quantum_whale_secret_2026'
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
+# Cache bypass update
 
 # --- CLOUDINARY CONFIGURATION ---
 CLOUDINARY_CONFIG = {
