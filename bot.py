@@ -1266,6 +1266,7 @@ def analyze_and_trade():
             logger.error(f"❌ Analysis error for {symbol}: {e}")
 
 def run_bot():
+    global TRADING_MODE  # <-- Must be at the top of function
     logger.info("🤖 Bot thread started - 24/7 Auto Trading")
     logger.info(f"📊 Trading Mode: {TRADING_MODE}")
     
@@ -1276,7 +1277,6 @@ def run_bot():
             logger.info(f"✅ Bitget {TRADING_MODE} account connected successfully!")
         else:
             logger.warning(f"⚠️ Bitget {TRADING_MODE} account connection failed! Falling back to PAPER mode.")
-            global TRADING_MODE
             TRADING_MODE = 'PAPER'
     
     while not _shutting_down:
