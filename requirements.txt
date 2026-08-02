@@ -1,1 +1,8 @@
-
+flask
+flask-socketio
+requests
+cloudinary
+pandas
+matplotlib
+websocket-client
+python-dotenv
