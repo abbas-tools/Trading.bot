@@ -5,3 +5,4 @@ cloudinary
 pandas
 matplotlib
 websocket-client
+python-dotenv
