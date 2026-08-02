@@ -163,20 +163,11 @@ def upload_to_cloudinary(image_buffer, filename, folder="quantum_whale"):
             ]
         )
         
-        logger.info(f"✅ Uploaded to Cloudinary: {upload_result.get('secure_url')}")
         return upload_result.get('secure_url')
     except Exception as e:
-        # Sirf standard log print karein, koi recursive call ya complex error logging na karein
         print(f"Cloudinary upload error exception: {e}")
-        logger.error(f"Cloudinary upload error: {str(e)}")
         return None
         
-        logger.info(f"✅ Uploaded to Cloudinary: {upload_result['secure_url']}")
-        return upload_result['secure_url']
-    except Exception as e:
-        logger.error(f"Cloudinary upload error: {e}")
-        return None
-
 def upload_chart_to_cloudinary(chart_buf, chart_type, symbol=None):
     if not chart_buf:
         return None
