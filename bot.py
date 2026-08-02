@@ -140,10 +140,16 @@ cloudinary_urls = {
 
 # --- CLOUDINARY HELPER FUNCTIONS ---
 def upload_to_cloudinary(image_buffer, filename, folder="quantum_whale"):
+    """Upload image to Cloudinary and return URL safely"""
     if not CLOUDINARY_ENABLED:
         return None
+    
     try:
-        image_buffer.seek(0)
+        # Reset buffer position
+        if hasattr(image_buffer, 'seek'):
+            image_buffer.seek(0)
+        
+        # Upload to Cloudinary
         upload_result = cloudinary.uploader.upload(
             image_buffer,
             folder=folder,
@@ -151,8 +157,20 @@ def upload_to_cloudinary(image_buffer, filename, folder="quantum_whale"):
             overwrite=True,
             resource_type="image",
             format="png",
-            transformation=[{'quality': 'auto'}, {'fetch_format': 'auto'}]
+            transformation=[
+                {'quality': 'auto'},
+                {'fetch_format': 'auto'}
+            ]
         )
+        
+        logger.info(f"✅ Uploaded to Cloudinary: {upload_result.get('secure_url')}")
+        return upload_result.get('secure_url')
+    except Exception as e:
+        # Sirf standard log print karein, koi recursive call ya complex error logging na karein
+        print(f"Cloudinary upload error exception: {e}")
+        logger.error(f"Cloudinary upload error: {str(e)}")
+        return None
+        
         logger.info(f"✅ Uploaded to Cloudinary: {upload_result['secure_url']}")
         return upload_result['secure_url']
     except Exception as e:
