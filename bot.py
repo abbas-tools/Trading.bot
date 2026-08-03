@@ -1,8 +1,6 @@
-# ============================================================
-# IMPORTANT: eventlet.monkey_patch() MUST be FIRST!
-# ============================================================
-eventlet.monkey_patch(thread=True, socket=True, select=True, time=True)
 import eventlet
+eventlet.monkey_patch(thread=True, socket=True, select=True, time=True)
+
 import time
 import sqlite3
 import requests
