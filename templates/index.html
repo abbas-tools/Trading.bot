@@ -84,12 +84,6 @@
             animation: pulse-glow 2s infinite;
         }
 
-        .status-waiting {
-            background: rgba(240, 185, 11, 0.12);
-            color: var(--neon-gold);
-            border: 1px solid var(--neon-gold);
-        }
-
         @keyframes pulse-glow {
             0% { box-shadow: 0 0 5px rgba(0, 255, 102, 0.1); }
             50% { box-shadow: 0 0 15px rgba(0, 255, 102, 0.3); }
@@ -98,7 +92,7 @@
 
         .grid-dashboard {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
             gap: 8px;
             margin-bottom: 12px;
         }
@@ -131,7 +125,7 @@
 
         .card-value {
             font-family: 'Orbitron', sans-serif;
-            font-size: 16px;
+            font-size: 14px;
             font-weight: 700;
             color: #fff;
             text-shadow: 0 0 10px rgba(255,255,255,0.05);
@@ -143,7 +137,7 @@
         .card-value.purple { color: var(--neon-purple); }
         .card-value.red { color: var(--neon-red); }
 
-        .card-sub { font-size: 7px; color: var(--text-dim); }
+        .card-sub { font-size: 6px; color: var(--text-dim); }
 
         .chart-container {
             background: rgba(3, 7, 18, 0.95);
@@ -189,7 +183,7 @@
             color: var(--neon-cyan);
         }
 
-        .chart-wrapper { height: 250px; position: relative; }
+        .chart-wrapper { height: 220px; position: relative; }
 
         .chart-wrapper canvas { width: 100% !important; height: 100% !important; }
 
@@ -219,9 +213,30 @@
         .pattern-label.bearish { color: var(--neon-red); border-color: var(--neon-red); }
         .pattern-label.neutral { color: var(--neon-gold); border-color: var(--neon-gold); }
 
+        .orderbook-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 6px;
+            margin-top: 6px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 6px;
+            padding: 6px 8px;
+            border: 1px solid #1a1f2a;
+        }
+
+        .orderbook-item {
+            font-size: 6px;
+            text-align: center;
+        }
+
+        .orderbook-item .label { color: var(--text-dim); }
+        .orderbook-item .value { font-weight: 700; }
+        .orderbook-item .value.buy { color: var(--neon-green); }
+        .orderbook-item .value.sell { color: var(--neon-red); }
+
         .positions-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
             gap: 6px;
             margin-top: 8px;
         }
@@ -299,12 +314,25 @@
         .trade-win { color: var(--neon-green); }
         .trade-loss { color: var(--neon-red); }
 
+        .sentiment-badge {
+            display: inline-block;
+            padding: 1px 6px;
+            border-radius: 10px;
+            font-size: 6px;
+            font-weight: 700;
+        }
+
+        .sentiment-bullish { background: rgba(0,255,102,0.2); color: var(--neon-green); }
+        .sentiment-bearish { background: rgba(255,0,85,0.2); color: var(--neon-red); }
+        .sentiment-neutral { background: rgba(240,185,11,0.2); color: var(--neon-gold); }
+
         @media (max-width: 768px) {
             .header { flex-direction: column; align-items: flex-start; }
             .header-controls { width: 100%; justify-content: space-between; }
             .grid-dashboard { grid-template-columns: 1fr 1fr; }
             .chart-wrapper { height: 180px; }
             .positions-grid { grid-template-columns: 1fr; }
+            .orderbook-grid { grid-template-columns: 1fr 1fr; }
         }
     </style>
 </head>
@@ -325,7 +353,7 @@
         <div class="card">
             <div class="card-title">Capital</div>
             <div class="card-value cyan">$<span id="capital">10.00</span></div>
-            <div class="card-sub">Initial: $10.00</div>
+            <div class="card-sub">Avail: $<span id="available">10.00</span></div>
         </div>
         <div class="card">
             <div class="card-title">Active</div>
@@ -338,9 +366,14 @@
             <div class="card-sub" id="win-rate-sub">Min: 65%</div>
         </div>
         <div class="card">
-            <div class="card-title">Circuit</div>
-            <div class="card-value green" id="circuit-status">ONLINE</div>
-            <div class="card-sub">20% limit</div>
+            <div class="card-title">Sentiment</div>
+            <div class="card-value" id="sentiment-display" style="font-size:12px;color:var(--neon-gold);">NEUTRAL</div>
+            <div class="card-sub" id="sentiment-conf">0%</div>
+        </div>
+        <div class="card">
+            <div class="card-title">Network</div>
+            <div class="card-value" id="network-status" style="font-size:12px;color:var(--neon-green);">✅ HEALTHY</div>
+            <div class="card-sub" id="network-nodes">0 nodes</div>
         </div>
         <div class="card">
             <div class="card-title">Mode</div>
@@ -363,6 +396,11 @@
         </div>
         <div id="patternLabels" class="pattern-labels">
             <span style="color:var(--text-dim);font-size:7px;">🔍 Loading...</span>
+        </div>
+        <div id="orderbookDisplay" class="orderbook-grid">
+            <div class="orderbook-item"><span class="label">Support</span><br><span class="value" id="support-level">—</span></div>
+            <div class="orderbook-item"><span class="label">Resistance</span><br><span class="value" id="resistance-level">—</span></div>
+            <div class="orderbook-item"><span class="label">Signal</span><br><span class="value" id="orderbook-signal">NEUTRAL</span></div>
         </div>
     </div>
 
@@ -387,7 +425,6 @@
         let chartInstance = null;
         let currentSymbol = 'XAUUSDT';
         let socket = null;
-        let chartInitialized = false;
 
         function initWebSocket() {
             socket = io('http://' + window.location.host);
@@ -395,23 +432,17 @@
             socket.on('connect', function() {
                 console.log('✅ WebSocket connected');
                 document.querySelector('.status-badge').textContent = '🟢 LIVE';
-                // Force chart update on reconnect
                 setTimeout(updateChart, 500);
             });
 
             socket.on('market_update', function(data) {
-                if (data.positions) {
-                    updatePositions(data.positions);
-                }
-                if (data.capital !== undefined) {
-                    document.getElementById('capital').innerText = data.capital.toFixed(2);
-                }
-                if (data.trades !== undefined) {
-                    document.getElementById('active-trades').innerText = data.trades;
-                }
-                if (data.trading_mode) {
-                    document.getElementById('trading-mode').innerText = data.trading_mode;
-                }
+                if (data.positions) updatePositions(data.positions);
+                if (data.capital !== undefined) document.getElementById('capital').innerText = data.capital.toFixed(2);
+                if (data.available_balance !== undefined) document.getElementById('available').innerText = data.available_balance.toFixed(2);
+                if (data.trades !== undefined) document.getElementById('active-trades').innerText = data.trades;
+                if (data.trading_mode) document.getElementById('trading-mode').innerText = data.trading_mode;
+                
+                // Win Rate
                 if (data.win_rate !== undefined) {
                     document.getElementById('win-rate').innerText = data.win_rate.toFixed(1) + '%';
                     const sub = document.getElementById('win-rate-sub');
@@ -427,6 +458,44 @@
                         sub.style.color = 'var(--neon-red)';
                     }
                 }
+                
+                // Sentiment
+                if (data.market_sentiment) {
+                    const s = data.market_sentiment;
+                    document.getElementById('sentiment-display').textContent = s.sentiment || 'NEUTRAL';
+                    document.getElementById('sentiment-display').className = 'card-value';
+                    if (s.sentiment === 'BULLISH') {
+                        document.getElementById('sentiment-display').style.color = 'var(--neon-green)';
+                    } else if (s.sentiment === 'BEARISH') {
+                        document.getElementById('sentiment-display').style.color = 'var(--neon-red)';
+                    } else {
+                        document.getElementById('sentiment-display').style.color = 'var(--neon-gold)';
+                    }
+                    document.getElementById('sentiment-conf').textContent = `Confidence: ${s.confidence || 0}%`;
+                }
+                
+                // Network Health
+                if (data.network_health) {
+                    const n = data.network_health;
+                    document.getElementById('network-status').textContent = n.status || 'UNKNOWN';
+                    document.getElementById('network-status').className = 'card-value';
+                    if (n.status === 'NORMAL') {
+                        document.getElementById('network-status').style.color = 'var(--neon-green)';
+                        document.getElementById('network-status').textContent = '✅ HEALTHY';
+                    } else if (n.status === 'CAUTION') {
+                        document.getElementById('network-status').style.color = 'var(--neon-gold)';
+                        document.getElementById('network-status').textContent = '⚠️ CAUTION';
+                    } else {
+                        document.getElementById('network-status').style.color = 'var(--neon-red)';
+                        document.getElementById('network-status').textContent = '🔴 CRITICAL';
+                    }
+                    document.getElementById('network-nodes').textContent = `${n.nodes || 0} nodes`;
+                }
+                
+                // Order Book
+                if (data.orderbook && data.orderbook[currentSymbol]) {
+                    updateOrderBook(data.orderbook[currentSymbol]);
+                }
             });
 
             socket.on('disconnect', function() {
@@ -436,13 +505,33 @@
             });
         }
 
+        function updateOrderBook(book) {
+            if (!book || !book.analysis) return;
+            const a = book.analysis;
+            document.getElementById('support-level').textContent = a.support ? '$' + a.support.toFixed(2) : '—';
+            document.getElementById('support-level').className = 'value buy';
+            document.getElementById('resistance-level').textContent = a.resistance ? '$' + a.resistance.toFixed(2) : '—';
+            document.getElementById('resistance-level').className = 'value sell';
+            
+            const signal = book.signal || 'NEUTRAL';
+            const sigEl = document.getElementById('orderbook-signal');
+            sigEl.textContent = signal;
+            if (signal === 'BUY') {
+                sigEl.className = 'value buy';
+            } else if (signal === 'SELL') {
+                sigEl.className = 'value sell';
+            } else {
+                sigEl.className = 'value';
+                sigEl.style.color = 'var(--neon-gold)';
+            }
+        }
+
         function updatePositions(positions) {
             const container = document.getElementById('positionsContainer');
             if (!positions || Object.keys(positions).length === 0) {
                 container.innerHTML = '<span style="color:var(--text-dim);font-size:8px;">No active positions</span>';
                 return;
             }
-
             let html = '';
             for (const [symbol, pos] of Object.entries(positions)) {
                 const pnlClass = pos.pnl >= 0 ? 'profit' : 'loss';
@@ -490,7 +579,6 @@
                     }
                 }
             });
-            chartInitialized = true;
             console.log('✅ Chart initialized');
         }
 
@@ -498,17 +586,10 @@
             try {
                 const response = await fetch('/chart_data');
                 const data = await response.json();
-                
-                if (!data || !data[currentSymbol]) {
-                    console.log('⏳ No chart data yet');
-                    return;
-                }
+                if (!data || !data[currentSymbol]) return;
 
                 const d = data[currentSymbol];
-                if (!d || !d.price || d.price.length === 0) {
-                    console.log('⏳ Waiting for price data...');
-                    return;
-                }
+                if (!d || !d.price || d.price.length === 0) return;
 
                 const prices = d.price || [];
                 const highs = d.high || [];
@@ -532,16 +613,17 @@
                 if (chartInstance && candleData.length > 0) {
                     chartInstance.data.datasets[0].data = candleData;
                     chartInstance.update();
-                    console.log('✅ Chart updated with', candleData.length, 'candles');
                 }
 
                 updatePatternLabels(patterns);
                 updateMTFBadge();
                 updateSymbolPrice(currentSymbol, d.current_price);
+                
+                // Update order book
+                if (d.orderbook) updateOrderBook(d.orderbook);
 
             } catch (error) {
                 console.error('Chart update error:', error);
-                // Retry after 2 seconds
                 setTimeout(updateChart, 2000);
             }
         }
@@ -563,7 +645,6 @@
 
         function updateMTFBadge() {
             const badge = document.getElementById('mtfBadge');
-            // Random for demo - replace with actual MTF data
             const trends = ['BULLISH', 'BEARISH', 'NEUTRAL'];
             const randomTrend = trends[Math.floor(Math.random() * 3)];
             const cls = randomTrend === 'BULLISH' ? 'mtf-bullish' : 
@@ -597,10 +678,10 @@
             .then(res => res.json())
             .then(data => {
                 document.getElementById('capital').innerText = data.capital?.toFixed(2) || '0.00';
+                document.getElementById('available').innerText = data.available_balance?.toFixed(2) || '0.00';
                 document.getElementById('active-trades').innerText = data.active_trades || 0;
                 document.getElementById('trading-mode').innerText = data.mode || 'PAPER';
 
-                // Win Rate
                 if (data.win_rate !== undefined) {
                     document.getElementById('win-rate').innerText = data.win_rate.toFixed(1) + '%';
                     const sub = document.getElementById('win-rate-sub');
@@ -617,18 +698,19 @@
                     }
                 }
 
-                const circuitElem = document.getElementById('circuit-status');
-                if(data.circuit_breaker) {
-                    circuitElem.innerText = "⚠ TRIPPED";
-                    circuitElem.className = "card-value red";
-                } else {
-                    circuitElem.innerText = "ONLINE";
-                    circuitElem.className = "card-value green";
+                if (data.market_sentiment) {
+                    const s = data.market_sentiment;
+                    document.getElementById('sentiment-display').textContent = s.sentiment || 'NEUTRAL';
+                    document.getElementById('sentiment-conf').textContent = `Confidence: ${s.confidence || 0}%`;
                 }
 
-                if (data.positions) {
-                    updatePositions(data.positions);
+                if (data.network_health) {
+                    const n = data.network_health;
+                    document.getElementById('network-nodes').textContent = `${n.network_health?.total_nodes || 0} nodes`;
                 }
+
+                if (data.positions) updatePositions(data.positions);
+                if (data.orderbook && data.orderbook[currentSymbol]) updateOrderBook(data.orderbook[currentSymbol]);
 
                 const logsPre = document.getElementById('logs');
                 if (data.logs && data.logs.length > 0) {
@@ -678,7 +760,6 @@
             initChart();
             updateDashboard();
             
-            // Initial chart update with retry
             setTimeout(updateChart, 1000);
             setTimeout(updateChart, 3000);
             setTimeout(updateChart, 5000);
