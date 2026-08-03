@@ -1,6 +1,5 @@
 import eventlet
-eventlet.monkey_patch(thread=True, socket=True, select=True, time=True)
-
+eventlet.monkey_patch()
 import time
 import sqlite3
 import requests
