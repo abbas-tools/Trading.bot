@@ -1,11 +1,13 @@
+eventlet
 flask
 flask-socketio
-python-socketio
-eventlet
+requests
 pandas
 numpy
 matplotlib
-requests
 cloudinary
 python-dotenv
-gunicorn
+redis
+cachetools
+aiohttp
+websockets
