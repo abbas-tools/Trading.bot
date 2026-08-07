@@ -3269,7 +3269,26 @@ class QuantumWhaleBot:
                 conn.commit()
         except Exception as e:
             logger.error(f"Log error: {e}")
-            
+      
+    def get_strategy_status(self):
+        """Get current strategy signals for dashboard"""
+        strategies = []
+        try:
+            # Get latest data for BTC to analyze
+            df = self.get_candles("BTCUSDT", "1H", 100)
+            if df is not None:
+                for s in self.consensus_engine.strategies:
+                    result = s.analyze(df)
+                    strategies.append({
+                        'name': s.name,
+                        'signal': result.get('signal', 'NEUTRAL'),
+                        'confidence': int(result.get('confidence', 0)),
+                        'details': result.get('details', '')[:30]
+                    })
+        except Exception as e:
+            logger.debug(f"Strategy status error: {e}")
+        return strategies
+                      
     def send_realtime_update(self):
         stats = self.get_statistics()
         var = self.var_calculator.calculate_var(self.position_data)
@@ -3445,9 +3464,10 @@ def get_status():
         'update_interval_ms': UPDATE_INTERVAL_MS,
         'learning_stats': learning_stats,
         'market_mood': bot.sentiment_analyzer.get_market_mood(),
-        'top_gainers': bot.top_movers.top_gainers[:5],
-        'top_losers': bot.top_movers.top_losers[:5],
-        'total_symbols': len(ALL_SYMBOLS)
+        'top_gainers': bot.top_movers.top_gainers[:5] if hasattr(bot.top_movers, 'top_gainers') else [],
+        'top_losers': bot.top_movers.top_losers[:5] if hasattr(bot.top_movers, 'top_losers') else [],
+        'total_symbols': len(ALL_SYMBOLS),
+        'strategies': bot.get_strategy_status()  # <-- THIS IS THE NEW LINE
     })
 
 @app.route('/health')
